@@ -31,6 +31,9 @@ import reactor.core.publisher.Mono;
  * 基于Servlet的MCP HTTP与服务器发送事件(SSE)传输规范的实现。
  * 该实现提供了与WebFluxSseServerTransport类似的功能，但使用传统的Servlet API而不是WebFlux。
  *
+ * @deprecated This class will be removed in 0.9.0. Use
+ * {@link HttpServletSseServerTransportProvider}.
+ *
  * <p>
  * 该传输处理两种类型的端点：
  * <ul>
@@ -46,7 +49,6 @@ import reactor.core.publisher.Mono;
  * <li>优雅关闭支持</li>
  * <li>错误处理和响应格式化</li>
  * </ul>
- *
  * @author Christian Tzolov
  * @author Alexandros Pappas
  * @see ServerMcpTransport
@@ -54,6 +56,7 @@ import reactor.core.publisher.Mono;
  */
 
 @WebServlet(asyncSupported = true)
+@Deprecated
 public class HttpServletSseServerTransport extends HttpServlet implements ServerMcpTransport {
 
 	/** 该类的日志记录器 */

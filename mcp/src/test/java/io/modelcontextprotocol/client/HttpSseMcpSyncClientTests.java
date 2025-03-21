@@ -4,10 +4,8 @@
 
 package io.modelcontextprotocol.client;
 
-import java.time.Duration;
-
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
-import io.modelcontextprotocol.spec.ClientMcpTransport;
+import io.modelcontextprotocol.spec.McpClientTransport;
 import org.junit.jupiter.api.Timeout;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -18,9 +16,9 @@ import org.testcontainers.containers.wait.strategy.Wait;
  * @author Christian Tzolov
  */
 @Timeout(15) // Giving extra time beyond the client timeout
-class ServletSseMcpAsyncClientTests extends AbstractMcpAsyncClientTests {
+class HttpSseMcpSyncClientTests extends AbstractMcpSyncClientTests {
 
-	String host = "http://localhost:3004";
+	String host = "http://localhost:3003";
 
 	// Uses the https://github.com/tzolov/mcp-everything-server-docker-image
 	@SuppressWarnings("resource")
@@ -30,7 +28,7 @@ class ServletSseMcpAsyncClientTests extends AbstractMcpAsyncClientTests {
 		.waitingFor(Wait.forHttp("/").forStatusCode(404));
 
 	@Override
-	protected ClientMcpTransport createMcpTransport() {
+	protected McpClientTransport createMcpTransport() {
 		return new HttpClientSseClientTransport(host);
 	}
 
@@ -44,11 +42,6 @@ class ServletSseMcpAsyncClientTests extends AbstractMcpAsyncClientTests {
 	@Override
 	protected void onClose() {
 		container.stop();
-	}
-
-	@Override
-	protected Duration getTimeoutDuration() {
-		return Duration.ofSeconds(20);
 	}
 
 }
