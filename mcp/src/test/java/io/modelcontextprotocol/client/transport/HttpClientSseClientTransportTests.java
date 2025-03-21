@@ -36,6 +36,15 @@ class HttpClientSseClientTransportTests {
 
 	static String host = "http://localhost:3001";
 
+
+	/**
+	 * 创建一个新的Docker容器实例
+	 * 使用的是docker.io/tzolov/mcp-everything-server:v1这个Docker镜像
+	 * 设置容器日志处理器，将容器的输出日志转换为UTF-8字符串并打印到控制台
+	 * 指定容器内端口为3001
+	 * waitingFor这是一个就绪检查，确保容器中的服务已经完全启动和准备就绪，就绪条件为：等待容器中的HTTP服务在根路径("/")返回404状态码
+	 * 需要本地启动Docker Desktop服务
+	 * */
 	@SuppressWarnings("resource")
 	GenericContainer<?> container = new GenericContainer<>("docker.io/tzolov/mcp-everything-server:v1")
 		.withLogConsumer(outputFrame -> System.out.println(outputFrame.getUtf8String()))
@@ -73,6 +82,7 @@ class HttpClientSseClientTransportTests {
 
 	void startContainer() {
 		container.start();
+		// 获取容器内端口 3001 映射的 宿主机 端口
 		int port = container.getMappedPort(3001);
 		host = "http://" + container.getHost() + ":" + port;
 	}
@@ -102,7 +112,10 @@ class HttpClientSseClientTransportTests {
 		JSONRPCRequest testMessage = new JSONRPCRequest(McpSchema.JSONRPC_VERSION, "test-method", "test-id",
 				Map.of("key", "value"));
 
-		// Simulate receiving the message
+		// 模拟客户端 接收到一个标准的JSON-RPC 2.0（Remote Procedure Call）格式的消息
+		// method : 表示要调用的方法名称，在本例中为"test-method"
+		// id : 表示消息的唯一标识符，在本例中为"test-id"
+		// params : 表示方法的参数，在本例中为一个包含"key"和"value"的键值对
 		transport.simulateMessageEvent("""
 				{
 				    "jsonrpc": "2.0",
@@ -111,10 +124,10 @@ class HttpClientSseClientTransportTests {
 				    "params": {"key": "value"}
 				}
 				""");
-
-		// Subscribe to messages and verify
+		// 客户端给服务端发送消息 testMessage
+		// 使用 StepVerifier（这是 Project Reactor 的测试工具）来验证消息发送是否成功完成
 		StepVerifier.create(transport.sendMessage(testMessage)).verifyComplete();
-
+		// 验证接收到的消息数量是否为1
 		assertThat(transport.getInboundMessageCount()).isEqualTo(1);
 	}
 

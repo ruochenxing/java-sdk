@@ -194,7 +194,7 @@ public class HttpClientSseClientTransport implements ClientMcpTransport {
 		}
 
 		try {
-			if (!closeLatch.await(10, TimeUnit.SECONDS)) {
+			if (!closeLatch.await(100, TimeUnit.SECONDS)) {
 				return Mono.error(new McpError("Failed to wait for the message endpoint"));
 			}
 		}

@@ -28,9 +28,9 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * Implementation of the MCP Stdio transport for servers that communicates using standard
- * input/output streams. Messages are exchanged as newline-delimited JSON-RPC messages
- * over stdin/stdout, with errors and debug information sent to stderr.
+ * MCP 标准输入输出传输层的服务器实现，使用标准输入输出流进行通信。
+ * 消息通过 stdin/stdout 以换行分隔的 JSON-RPC 消息形式交换，
+ * 错误和调试信息发送到 stderr。
  *
  * @author Christian Tzolov
  */
@@ -38,39 +38,46 @@ public class StdioServerTransport implements ServerMcpTransport {
 
 	private static final Logger logger = LoggerFactory.getLogger(StdioServerTransport.class);
 
+	// 入站消息接收器
 	private final Sinks.Many<JSONRPCMessage> inboundSink;
 
+	// 出站消息接收器
 	private final Sinks.Many<JSONRPCMessage> outboundSink;
 
+	// JSON 对象映射器
 	private ObjectMapper objectMapper;
 
-	/** Scheduler for handling inbound messages */
+	/** 处理入站消息的调度器 */
 	private Scheduler inboundScheduler;
 
-	/** Scheduler for handling outbound messages */
+	/** 处理出站消息的调度器 */
 	private Scheduler outboundScheduler;
 
+	// 关闭状态标志
 	private volatile boolean isClosing = false;
 
+	// 输入流
 	private final InputStream inputStream;
 
+	// 输出流
 	private final OutputStream outputStream;
 
+	// 入站就绪信号
 	private final Sinks.One<Void> inboundReady = Sinks.one();
 
+	// 出站就绪信号
 	private final Sinks.One<Void> outboundReady = Sinks.one();
 
 	/**
-	 * Creates a new StdioServerTransport with a default ObjectMapper and System streams.
+	 * 默认构造函数，使用系统标准输入输出流
 	 */
 	public StdioServerTransport() {
 		this(new ObjectMapper());
 	}
 
 	/**
-	 * Creates a new StdioServerTransport with the specified ObjectMapper and System
-	 * streams.
-	 * @param objectMapper The ObjectMapper to use for JSON serialization/deserialization
+	 * 使用自定义 JSON 对象映射器的构造函数
+	 * @param objectMapper JSON 对象映射器
 	 */
 	public StdioServerTransport(ObjectMapper objectMapper) {
 
@@ -88,6 +95,11 @@ public class StdioServerTransport implements ServerMcpTransport {
 		this.outboundScheduler = Schedulers.fromExecutorService(Executors.newSingleThreadExecutor(), "outbound");
 	}
 
+	/**
+	 * 建立连接并设置消息处理器
+	 * @param handler 消息处理器
+	 * @return 表示连接操作的 Mono
+	 */
 	@Override
 	public Mono<Void> connect(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> handler) {
 		return Mono.<Void>fromRunnable(() -> {
@@ -99,6 +111,10 @@ public class StdioServerTransport implements ServerMcpTransport {
 		}).subscribeOn(Schedulers.boundedElastic());
 	}
 
+	/**
+	 * 处理入站消息
+	 * @param inboundMessageHandler 入站消息处理器
+	 */
 	private void handleIncomingMessages(Function<Mono<JSONRPCMessage>, Mono<JSONRPCMessage>> inboundMessageHandler) {
 		this.inboundSink.asFlux()
 			.flatMap(message -> Mono.just(message)
@@ -112,6 +128,11 @@ public class StdioServerTransport implements ServerMcpTransport {
 			.subscribe();
 	}
 
+	/**
+	 * 发送消息
+	 * @param message 要发送的消息
+	 * @return 表示发送操作的 Mono
+	 */
 	@Override
 	public Mono<Void> sendMessage(JSONRPCMessage message) {
 		return Mono.zip(inboundReady.asMono(), outboundReady.asMono()).then(Mono.defer(() -> {
@@ -125,8 +146,7 @@ public class StdioServerTransport implements ServerMcpTransport {
 	}
 
 	/**
-	 * Starts the inbound processing thread that reads JSON-RPC messages from stdin.
-	 * Messages are deserialized and emitted to the inbound sink.
+	 * 启动入站消息处理
 	 */
 	private void startInboundProcessing() {
 		this.inboundScheduler.schedule(() -> {
@@ -172,8 +192,7 @@ public class StdioServerTransport implements ServerMcpTransport {
 	}
 
 	/**
-	 * Starts the outbound processing thread that writes JSON-RPC messages to stdout.
-	 * Messages are serialized to JSON and written with a newline delimiter.
+	 * 启动出站消息处理
 	 */
 	private void startOutboundProcessing() {
 		Function<Flux<JSONRPCMessage>, Flux<JSONRPCMessage>> outboundConsumer = messages -> messages // @formatter:off
@@ -223,6 +242,10 @@ public class StdioServerTransport implements ServerMcpTransport {
 			 outboundConsumer.apply(outboundSink.asFlux()).subscribe();
 	 } // @formatter:on
 
+	/**
+	 * 优雅关闭传输层
+	 * @return 表示关闭操作的 Mono
+	 */
 	@Override
 	public Mono<Void> closeGracefully() {
 		return Mono.<Void>defer(() -> {
@@ -236,17 +259,32 @@ public class StdioServerTransport implements ServerMcpTransport {
 		}).subscribeOn(Schedulers.boundedElastic());
 	}
 
+	/**
+	 * 将数据反序列化为指定类型
+	 * @param data 要反序列化的数据
+	 * @param typeRef 目标类型引用
+	 * @return 反序列化后的对象
+	 */
 	@Override
 	public <T> T unmarshalFrom(Object data, TypeReference<T> typeRef) {
 		return this.objectMapper.convertValue(data, typeRef);
 	}
 
+	/**
+	 * 如果未关闭则记录异常信息
+	 * @param message 日志消息
+	 * @param e 异常
+	 */
 	private void logIfNotClosing(String message, Exception e) {
 		if (!this.isClosing) {
 			logger.error(message, e);
 		}
 	}
 
+	/**
+	 * 如果未关闭则记录信息
+	 * @param message 日志消息
+	 */
 	private void logIfNotClosing(String message) {
 		if (!this.isClosing) {
 			logger.error(message);

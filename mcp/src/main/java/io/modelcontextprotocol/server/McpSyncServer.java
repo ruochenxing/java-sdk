@@ -11,38 +11,33 @@ import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
 import io.modelcontextprotocol.util.Assert;
 
 /**
- * A synchronous implementation of the Model Context Protocol (MCP) server that wraps
- * {@link McpAsyncServer} to provide blocking operations. This class delegates all
- * operations to an underlying async server instance while providing a simpler,
- * synchronous API for scenarios where reactive programming is not required.
+ * MCP（Model Context Protocol）服务器的同步实现类，它包装了 {@link McpAsyncServer} 以提供阻塞操作。
+ * 该类将所有操作委托给底层的异步服务器实例，同时为不需要响应式编程的场景提供更简单的同步 API。
  *
  * <p>
- * The MCP server enables AI models to expose tools, resources, and prompts through a
- * standardized interface. Key features available through this synchronous API include:
+ * MCP 服务器使 AI 模型能够通过标准化接口暴露工具、资源和提示词。通过这个同步 API 可用的主要特性包括：
  * <ul>
- * <li>Tool registration and management for extending AI model capabilities
- * <li>Resource handling with URI-based addressing for providing context
- * <li>Prompt template management for standardized interactions
- * <li>Real-time client notifications for state changes
- * <li>Structured logging with configurable severity levels
- * <li>Support for client-side AI model sampling
+ * <li>用于扩展 AI 模型能力的工具注册和管理</li>
+ * <li>基于 URI 的资源处理，用于提供上下文</li>
+ * <li>用于标准化交互的提示词模板管理</li>
+ * <li>状态变更的实时客户端通知</li>
+ * <li>可配置严重级别的结构化日志</li>
+ * <li>支持客户端 AI 模型采样</li>
  * </ul>
  *
  * <p>
- * While {@link McpAsyncServer} uses Project Reactor's Mono and Flux types for
- * non-blocking operations, this class converts those into blocking calls, making it more
- * suitable for:
+ * 虽然 {@link McpAsyncServer} 使用 Project Reactor 的 Mono 和 Flux 类型进行非阻塞操作，
+ * 但该类将这些转换为阻塞调用，使其更适合：
  * <ul>
- * <li>Traditional synchronous applications
- * <li>Simple scripting scenarios
- * <li>Testing and debugging
- * <li>Cases where reactive programming adds unnecessary complexity
+ * <li>传统的同步应用程序</li>
+ * <li>简单的脚本场景</li>
+ * <li>测试和调试</li>
+ * <li>响应式编程增加不必要复杂性的情况</li>
  * </ul>
  *
  * <p>
- * The server supports runtime modification of its capabilities through methods like
- * {@link #addTool}, {@link #addResource}, and {@link #addPrompt}, automatically notifying
- * connected clients of changes when configured to do so.
+ * 服务器支持通过 {@link #addTool}、{@link #addResource} 和 {@link #addPrompt} 等方法
+ * 在运行时修改其功能，并在配置为这样做时自动通知连接的客户端。
  *
  * @author Christian Tzolov
  * @author Dariusz Jędrzejczyk
@@ -52,13 +47,13 @@ import io.modelcontextprotocol.util.Assert;
 public class McpSyncServer {
 
 	/**
-	 * The async server to wrap.
+	 * 底层的异步服务器实例
 	 */
 	private final McpAsyncServer asyncServer;
 
 	/**
-	 * Creates a new synchronous server that wraps the provided async server.
-	 * @param asyncServer The async server to wrap
+	 * 构造函数，使用异步服务器实例创建同步服务器
+	 * @param asyncServer 异步服务器实例
 	 */
 	public McpSyncServer(McpAsyncServer asyncServer) {
 		Assert.notNull(asyncServer, "Async server must not be null");
@@ -66,177 +61,157 @@ public class McpSyncServer {
 	}
 
 	/**
-	 * Retrieves the list of all roots provided by the client.
-	 * @return The list of roots
+	 * 列出所有根资源
+	 * @return 包含根资源列表的结果
 	 */
 	public McpSchema.ListRootsResult listRoots() {
 		return this.listRoots(null);
 	}
 
 	/**
-	 * Retrieves a paginated list of roots provided by the server.
-	 * @param cursor Optional pagination cursor from a previous list request
-	 * @return The list of roots
+	 * 使用游标列出根资源
+	 * @param cursor 分页游标
+	 * @return 包含根资源列表的结果
 	 */
 	public McpSchema.ListRootsResult listRoots(String cursor) {
 		return this.asyncServer.listRoots(cursor).block();
 	}
 
 	/**
-	 * Add a new tool handler.
-	 * @param toolHandler The tool handler to add
+	 * 添加新工具
+	 * @param toolHandler 工具处理器
 	 */
 	public void addTool(McpServerFeatures.SyncToolRegistration toolHandler) {
 		this.asyncServer.addTool(McpServerFeatures.AsyncToolRegistration.fromSync(toolHandler)).block();
 	}
 
 	/**
-	 * Remove a tool handler.
-	 * @param toolName The name of the tool handler to remove
+	 * 移除指定工具
+	 * @param toolName 工具名称
 	 */
 	public void removeTool(String toolName) {
 		this.asyncServer.removeTool(toolName).block();
 	}
 
 	/**
-	 * Add a new resource handler.
-	 * @param resourceHandler The resource handler to add
+	 * 添加新资源
+	 * @param resourceHandler 资源处理器
 	 */
 	public void addResource(McpServerFeatures.SyncResourceRegistration resourceHandler) {
 		this.asyncServer.addResource(McpServerFeatures.AsyncResourceRegistration.fromSync(resourceHandler)).block();
 	}
 
 	/**
-	 * Remove a resource handler.
-	 * @param resourceUri The URI of the resource handler to remove
+	 * 移除指定资源
+	 * @param resourceUri 资源URI
 	 */
 	public void removeResource(String resourceUri) {
 		this.asyncServer.removeResource(resourceUri).block();
 	}
 
 	/**
-	 * Add a new prompt handler.
-	 * @param promptRegistration The prompt registration to add
+	 * 添加新提示词
+	 * @param promptRegistration 提示词注册信息
 	 */
 	public void addPrompt(McpServerFeatures.SyncPromptRegistration promptRegistration) {
 		this.asyncServer.addPrompt(McpServerFeatures.AsyncPromptRegistration.fromSync(promptRegistration)).block();
 	}
 
 	/**
-	 * Remove a prompt handler.
-	 * @param promptName The name of the prompt handler to remove
+	 * 移除指定提示词
+	 * @param promptName 提示词名称
 	 */
 	public void removePrompt(String promptName) {
 		this.asyncServer.removePrompt(promptName).block();
 	}
 
 	/**
-	 * Notify clients that the list of available tools has changed.
+	 * 通知客户端工具列表已更改
 	 */
 	public void notifyToolsListChanged() {
 		this.asyncServer.notifyToolsListChanged().block();
 	}
 
 	/**
-	 * Get the server capabilities that define the supported features and functionality.
-	 * @return The server capabilities
+	 * 获取服务器能力配置
+	 * @return 服务器能力配置对象
 	 */
 	public McpSchema.ServerCapabilities getServerCapabilities() {
 		return this.asyncServer.getServerCapabilities();
 	}
 
 	/**
-	 * Get the server implementation information.
-	 * @return The server implementation details
+	 * 获取服务器实现信息
+	 * @return 服务器实现信息对象
 	 */
 	public McpSchema.Implementation getServerInfo() {
 		return this.asyncServer.getServerInfo();
 	}
 
 	/**
-	 * Get the client capabilities that define the supported features and functionality.
-	 * @return The client capabilities
+	 * 获取客户端能力配置
+	 * @return 客户端能力配置对象
 	 */
 	public ClientCapabilities getClientCapabilities() {
 		return this.asyncServer.getClientCapabilities();
 	}
 
 	/**
-	 * Get the client implementation information.
-	 * @return The client implementation details
+	 * 获取客户端实现信息
+	 * @return 客户端实现信息对象
 	 */
 	public McpSchema.Implementation getClientInfo() {
 		return this.asyncServer.getClientInfo();
 	}
 
 	/**
-	 * Notify clients that the list of available resources has changed.
+	 * 通知客户端资源列表已更改
 	 */
 	public void notifyResourcesListChanged() {
 		this.asyncServer.notifyResourcesListChanged().block();
 	}
 
 	/**
-	 * Notify clients that the list of available prompts has changed.
+	 * 通知客户端提示词列表已更改
 	 */
 	public void notifyPromptsListChanged() {
 		this.asyncServer.notifyPromptsListChanged().block();
 	}
 
 	/**
-	 * Send a logging message notification to all clients.
-	 * @param loggingMessageNotification The logging message notification to send
+	 * 发送日志通知
+	 * @param loggingMessageNotification 日志消息通知
 	 */
 	public void loggingNotification(LoggingMessageNotification loggingMessageNotification) {
 		this.asyncServer.loggingNotification(loggingMessageNotification).block();
 	}
 
 	/**
-	 * Close the server gracefully.
+	 * 优雅关闭服务器
 	 */
 	public void closeGracefully() {
 		this.asyncServer.closeGracefully().block();
 	}
 
 	/**
-	 * Close the server immediately.
+	 * 强制关闭服务器
 	 */
 	public void close() {
 		this.asyncServer.close();
 	}
 
 	/**
-	 * Get the underlying async server instance.
-	 * @return The wrapped async server
+	 * 获取底层的异步服务器实例
+	 * @return 异步服务器实例
 	 */
 	public McpAsyncServer getAsyncServer() {
 		return this.asyncServer;
 	}
 
 	/**
-	 * Create a new message using the sampling capabilities of the client. The Model
-	 * Context Protocol (MCP) provides a standardized way for servers to request LLM
-	 * sampling ("completions" or "generations") from language models via clients.
-	 *
-	 * <p>
-	 * This flow allows clients to maintain control over model access, selection, and
-	 * permissions while enabling servers to leverage AI capabilities—with no server API
-	 * keys necessary. Servers can request text or image-based interactions and optionally
-	 * include context from MCP servers in their prompts.
-	 *
-	 * <p>
-	 * Unlike its async counterpart, this method blocks until the message creation is
-	 * complete, making it easier to use in synchronous code paths.
-	 * @param createMessageRequest The request to create a new message
-	 * @return The result of the message creation
-	 * @throws McpError if the client has not been initialized or does not support
-	 * sampling capabilities
-	 * @throws McpError if the client does not support the createMessage method
-	 * @see McpSchema.CreateMessageRequest
-	 * @see McpSchema.CreateMessageResult
-	 * @see <a href=
-	 * "https://spec.modelcontextprotocol.io/specification/client/sampling/">Sampling
-	 * Specification</a>
+	 * 创建新消息
+	 * @param createMessageRequest 创建消息请求
+	 * @return 包含创建结果的消息
 	 */
 	public McpSchema.CreateMessageResult createMessage(McpSchema.CreateMessageRequest createMessageRequest) {
 		return this.asyncServer.createMessage(createMessageRequest).block();

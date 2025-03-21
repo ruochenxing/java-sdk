@@ -101,7 +101,9 @@ public abstract class AbstractMcpSyncClientTests {
 
 		assertThat(tools).isNotNull().satisfies(result -> {
 			assertThat(result.tools()).isNotNull().isNotEmpty();
-
+			System.out.println("tools:");
+			System.out.println(result.tools());
+			System.out.println("===============");
 			Tool firstTool = result.tools().get(0);
 			assertThat(firstTool.name()).isNotNull();
 			assertThat(firstTool.description()).isNotNull();

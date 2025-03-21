@@ -107,7 +107,7 @@ public abstract class AbstractMcpAsyncClientTests {
 
 		StepVerifier.create(mcpAsyncClient.listTools(null)).consumeNextWith(result -> {
 			assertThat(result.tools()).isNotNull().isNotEmpty();
-
+			System.out.println(result.tools());
 			Tool firstTool = result.tools().get(0);
 			assertThat(firstTool.name()).isNotNull();
 			assertThat(firstTool.description()).isNotNull();

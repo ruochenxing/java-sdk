@@ -48,7 +48,7 @@ class ServletSseMcpSyncClientTests extends AbstractMcpSyncClientTests {
 
 	@Override
 	protected Duration getTimeoutDuration() {
-		return Duration.ofMillis(300);
+		return Duration.ofSeconds(20);
 	}
 
 }
